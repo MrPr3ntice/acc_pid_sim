@@ -1,0 +1,809 @@
+<!--
+Copyright 2021 Karl-Philipp Kortmann
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this
+software and associated documentation files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+      :root {
+        --width: 70vw;
+        --widthSchieber: 30vw;
+        --borderWidth: 0px;
+        --grey1: rgb(235, 235, 235);
+        --grey2: rgb(210, 210, 210);
+        --fontColor: rgb(50, 50, 50);
+      }
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      html {
+        margin: 0px;
+        padding: 0px;
+        font-size: 1.4vmin;
+        font-family: sans-serif;
+        color: var(--fontColor);
+      }
+      img {
+        background-color: white;
+      }
+      #topBanner {
+        margin: auto;
+        padding: 0px;
+        height: 7vmin;
+        font-size: 2vw;
+        text-align: left;
+        vertical-align: middle;
+        line-height: 7vmin;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+        background-color: transparent;
+        background-image: url('imes.jpg');
+        background-repeat: no-repeat;
+        background-position: right;
+        background-size: contain;
+      }
+      #topBanner2 {
+        margin: auto;
+        padding: 0px;
+        padding-top: 1vmin;
+        padding-bottom: 0.5vmin;
+        font-size: 1.2vmin;
+        text-align: right;
+        vertical-align: bottom;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+        background-color: transparent;
+      }
+      #plantDiv {
+        margin: auto;
+        padding: 0px;
+        border: var(--borderWidth) solid red;
+        width: var(--width);
+        background-color: var(--grey1);
+      }
+      #plantTable {
+        width: 100%;
+        border: var(--borderWidth) solid blue;
+      }
+      #controllerDiv {
+        margin: auto;
+        padding: 0px;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+        background-color: rgb(255, 255, 255);
+      }
+      #controllerTable {
+        width: 100%;
+        border: var(--borderWidth) solid red;
+      }
+      #liveDiv {
+        margin: auto;
+        padding: 0px;
+        border: var(--borderWidth) solid red;
+        background-color: var(--grey1);
+        width: var(--width);
+      }
+      #liveTable {
+        width: 100%;
+        border: var(--borderWidth) solid red;
+      }
+      #plotDiv {
+        margin: auto;
+        padding: 0px;
+        background-color: transparent;
+        width: var(--width);
+        border: var(--borderWidth) solid green;
+        overflow: hidden;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      #graphDist {
+        margin: auto;
+        padding: 0px;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+        height: 70vh;
+      }
+      #monitorDiv {
+        margin: auto;
+        padding: 0px;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+        background-color: var(--grey1);
+      }
+      #bottomBanner {
+        margin: auto;
+        padding: 0px;
+        height: 5vmin;
+        font-size: 1.8vmin;
+        text-align: center;
+        vertical-align: middle;
+        line-height: 5vmin;
+        background-color: transparent;
+        border: var(--borderWidth) solid blue;
+        width: var(--width);
+      }
+      form {
+        padding: 0px;
+        margin: 0px;
+      }
+      input, button {
+        font-size: 1.8vmin;
+        font-family: sans-serif;
+      }
+      table {
+        font-size: 2.3vmin;
+        font-family: sans-serif;
+      }
+      input[type=range] {
+        width: var(--widthSchieber);
+        height: 1.2vmin;
+      }
+      img {
+        padding: 0px;
+        width: 0%;
+        margin: auto;
+        display: block;
+      }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    
+  </head>
+  <body>
+    <div id="topBanner">&nbsp;&nbsp;Adaptive Cruise Control: PID-Control Simulation</div>
+    <div id="topBanner2">Version: v1.0 (2021/06)</br>Author: Karl-Philipp Kortmann</div>
+		<div id="plantDiv" lang="en-US">
+			<form id="plantForm" action="#" onsubmit="return false">
+				<table id="plantTable">
+					<tr><th colspan="5" >Plant parameters: Vehicle $1$ (single-track, single axis model)</th></tr>
+					<tr>
+						<td>Mass</td><td>$m$</td><td>[100, 5000]</td><td>[kg]</td>
+						<td><input type="number" id="m" name="m" min=100 max=5000 size=5 step=1 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Drag coef.</td><td>$c_\mathrm{w}$</td><td>[0.2, 2]</td><td>[-]</td>
+						<td><input type="number" id="cw" name="cw" min=0.2 max=2 size=5 step=0.01 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Frontal area</td><td>$A$</td><td>[1, 16]</td><td>[m²]</td>
+						<td><input type="number" id="A" name="A" min=1 max=16 size=5 step=0.1 value="" required /></td>
+					</tr>
+          <tr>
+						<td>Rolling resistance coef.</td><td>$d_\mathrm{N}$</td><td>[0.005, 0.35]</td><td>[-]</td>
+						<td><input type="number" id="dN" name="dN" min=0.005 max=0.35 size=5 step=0.001 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Max. power</td><td>$P_\mathrm{max}$</td><td>[1, 999]</td><td>[kW]</td>
+						<td><input type="number" id="pmax" name="pmax" min=1 max=999 size=5 step=1 value="" required /></td>
+					</tr>
+					<tr><th colspan="5">Plant parameters: General</th></tr>
+					<tr>
+						<td>Roadway slope</td><td>$\alpha$</td><td>[-45, 45]</td><td>[deg]</td>
+						<td><input type="number" id="alpha" name="alpha" min=-45 max=45 size=5 step=1 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Coef. of friction</td><td>$\mu$</td><td>[0.1, 1.2]</td><td>[-]</td>
+						<td><input type="number" id="mu" name="mu" min=0.1 max=1.9 size=5 step=0.1 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Signal-to-noise ratio of<br/>distance measurement</td><td>$\mathrm{SNR_{dB}}$</td><td>[0, 150]</td><td>[dB]</td>
+						<td><input type="number" id="snr" name="snr" min=0 max=150 size=5 step=10 value="" required /></td>
+					</tr>
+          <tr>
+						<td>Initial speed vehicle $1$</td><td>$\dot{x}_1(0)$</td><td>[0, 70]</td><td>[m/s]</td>
+						<td><input type="number" id="dx10" name="dx10" min=0 max=70 size=5 step=1 value="" required /></td>
+					</tr>
+					<tr>
+						<td>Initial distance</td><td>$\Delta x(0)$</td><td>[0, 200]</td><td>[m]</td>
+						<td><input type="number" id="d0" name="d0" min=0 max=200 size=5 step=1 value="" required /></td>
+					</tr>
+				</table>
+				<button type="submit" id="updatePlant" onclick="updatePlantVars()">Update plant parameters</button> 
+				<button type="button" id="resetPlant"  onclick="resetPlantVars()">Reset plant parameters</button>
+				<button type="button" id="img1Button" onclick="showImg(1)">Show plant schematic</button>
+			</form>
+      <img id="img1" src="plant.svg"/>
+		</div>
+    <div id="controllerDiv" lang="en-US">
+      <form id="controllerForm" action="#" onsubmit="return false">
+        <table id="controllerTable">
+          <tr><th colspan="5">Controller parameters:</th></tr>
+          <tr>
+            <td>Proportional gain</td><td>$K_p$</td><td>$|K_p|\in(0,99]$</td><td>[-]</td>
+            <td><input type="number" id="kp" name="kp" min=-99 max=99 size=7 step=0.1 value="" required oninput="intDer('kp')" /></td>
+          </tr>
+          <tr>
+            <td>Integral gain</td><td>$K_\mathrm{i}$</td><td>$|K_\mathrm{i}|\in(0,99]$</td><td>[-]</td>
+            <td><input type="number" id="ki" name="ki" min=-99 max=99 size=7 step=0.1 value="" required oninput="intDer('ki')" /></td>
+          </tr>
+          <tr>
+            <td>Derivative gain</td><td>$K_\mathrm{d}$</td><td>$|K_\mathrm{d}|\in(0,99]$</td><td>[-]</td>
+            <td><input type="number" id="kd" name="kd" min=-99 max=99 size=7 step=0.1 value="" required oninput="intDer('kd')" /></td>
+          </tr>
+          <tr>
+          <tr>
+            <td>&nbsp;&nbsp;<i>Integral time</i></td><td>$T_\mathrm{i}=\frac{K_\mathrm{p}}{K_\mathrm{i}}$</td><td>$|T_\mathrm{i}|\in(0,\infty)$</td><td>[-]</td>
+            <td><input type="number" id="ti" name="ti" size=7 step=0.1 value="" required oninput="intDer('ti')" /></td>
+          </tr>
+            <td>&nbsp;&nbsp;<i>Derivative time</i></td><td>$T_\mathrm{d}=\frac{K_\mathrm{d}}{K_\mathrm{p}}$</td><td>$|T_\mathrm{d}|\in[0,100]$</td><td>[-]</td>
+            <td><input type="number" id="td" name="td" min=-100 max=100 size=7 step=0.1 value="" required oninput="intDer('td')" /></td>
+          </tr>
+          <tr>
+            <td>Anti windup limit</td><td>$i_\mathrm{max}$</td><td>$i_\mathrm{max}\in[0.1, 100]$</td><td>[-]</td>
+            <td><input type="number" id="imax" name="imax" min=0.1 max=100 size=7 step=0.1 value="" required /></td>
+          </tr>
+          <tr>
+            <td>Sample time</td><td>$\mathrm{d}t$</td><td>$\mathrm{d}t\in[0.01, 1]$</td><td>[s]</td>
+            <td><input type="number" id="dt" name="dt" min=0.01 max=1 size=7 step=0.01 value="" required /></td>
+          </tr>
+        </table>
+        <button type="submit" id="updateController" onclick="updateControllerVars()">Update controller parameters</button> 
+				<button type="button" id="resetController"  onclick="resetControllerVars()">Reset controller parameters</button>
+        <button type="button" id="img2Button" onclick="showImg(2)">Show loop schematic</button> 
+			</form>
+      <img id="img2" src="loop.svg" />
+    </div>
+    <div id="liveDiv" lang="en-US">
+      <form id="liveForm" action="#" onsubmit="return false">
+        <table id="liveTable">
+          <tr><td colspan="5">Live variables:</td></tr>
+          <tr>
+            <td>Distance setpoint</td><td>$\Delta x_\mathrm{sp}(t)$</td><td>[1, 200]</td><td>[m]</td>
+            <td><input type="range" id="dsp" name="dsp" min=1 max=200 step=1 value="" required oninput="document.getElementById('dsp_out').innerHTML = this.value; updateLiveVars()"/></td>
+            <td style="width:6%;"><output id="dsp_out"></output></td>
+          </tr>
+          <tr>
+            <td>Speed vehicle $2$</td><td>$\dot{x}_2(t)$</td><td>[0, 70]</td><td>[m/s]</td>
+            <td style="width: 4vw;"><input type="range" id="dx2" name="dx2" min=0 max=70 step=0.1 value="" required oninput="document.getElementById('dx2_out').innerHTML = this.value; updateLiveVars()"/></td>
+            <td style="width: 4vw;"><output id="dx2_out"></output></td>
+          </tr>
+        </table>
+        <button type="button" id="startSimulation" onclick="startPauseSimulation()">(Re-)Start simulation</button> 
+				<button type="button" id="resetSimulation"  onclick="resetSimulationButton()">Stop and Reset simulation</button>
+      </form>
+    </div>
+    <div id="graphDist"></div>
+    <!--<div id="monitorDiv">
+      <table id="monitorTable" style="width:100%;">
+        <tr><th colspan="4">Live Monitor:</th></tr>
+        <tr><td style="width:33%;">$t$</td><td style="width:10%;">$=$</td><td id="t_mon">0</td><td style="width:13%;">$\mathrm{s}$</td></tr>
+        <tr><td>$\dot{x}_1$</td><td>$=$</td><td id="dx1_mon">0</td><td>$\frac{\mathrm{m}}{\mathrm{s}}$</td></tr>
+        <tr><td>$\ddot{x}_1$</td><td>$=$</td><td id="ddx1_mon">0</td><td>$\frac{\mathrm{m}}{\mathrm{s}^2}$</td></tr>
+        <tr><td>$\dot{x}_2$</td><td>$=$</td><td id="dx2_mon">0</td><td>$\frac{\mathrm{m}}{\mathrm{s}}$</td></tr>
+        <tr><td>$\Delta x$</td><td>$=$</td><td id="d_mon">4</td><td>$\mathrm{m}$</td></tr>
+        <tr><td>$\Delta x_{meas}$</td><td>$=$</td><td id="dmeas_mon">0</td><td>$\mathrm{m}$</td></tr>
+        <tr><td>$\Delta x_{err}$</td><td>$=$</td><td id="derr_mon">0</td><td>$\mathrm{m}$</td></tr>
+        <tr><td>$\frac{d\Delta x_{err}}{dt}$</td><td>$=$</td><td id="dderr_mon">0</td><td>$\frac{\mathrm{m}}{\mathrm{s}}$</td></tr>
+        <tr><td>$\int\Delta x_{err} dt$</td><td>$=$</td><td id="iint_mon">0</td><td>$\mathrm{ms}$</td></tr>
+        <tr><td>$f_{sp}$</td><td>$=$</td><td id="fsp_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{break, max}$</td><td>$=$</td><td id="fmin_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{motor, max}$</td><td>$=$</td><td id="fmax_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{tires}$</td><td>$=$</td><td id="ftire_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{slope}$</td><td>$=$</td><td id="fslope_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{drag}$</td><td>$=$</td><td id="fdrag_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{roll}$</td><td>$=$</td><td id="frollRes_mon">0</td><td>$\mathrm{kN}$</td></tr>
+        <tr><td>$f_{res}$</td><td>$=$</td><td id="fres_mon">0</td><td>$\mathrm{kN}$</td></tr>
+      </table>
+    </div>-->
+    <div id="bottomBanner">Copyright &copy; 2021 Karl-Philipp Kortmann | <a href="https://opensource.org/licenses/MIT">MIT Licence</a> | <a href="https://www.imes.uni-hannover.de/de/impressum/">impressum</a></div>
+    <script type="text/javascript">
+      // SIMULATION
+      // constants
+      var g = 9.81;
+      var rho = 1.2;
+      // default vars plant
+      var m_def = 1501;
+      var cw_def = 0.25;
+      var dN_def = 0.01;
+      var A_def = 3.5;
+      var pmax_def = 200;
+      var alpha_def = 5;
+      var mu_def = 1.1;
+      var snr_def = 120;
+      var dx10_def = 0;
+      var d0_def = 50;
+      // default vars controller
+      var kp_def = -12;
+      var ki_def = -20;
+      var kd_def = -22;
+      var imax_def = 10;
+      var dt_def = 0.1;
+      // default vars live
+      dsp_def = 50;
+      dx2_def = 0;
+      // plant vars
+      var m, cw, dN, A, pmax, alpha, mu, snr, dx10, d0;
+      // controller vars
+      var kp, ki, kd, imax, dt;
+      // live vars
+      var dsp, dx2;
+      // loop vars
+      var t, dx1, ddx1, derr, dderr, derrOld, fsp, fp, fi, fd, fres, fmax, fdrag, frollres, fmin, ftire, d, dmeas, fslope, iint, dOld;
+      var sim_run = false;
+      // general vars
+      var intervalGraph = setInterval(function() {var lol = 1+1;}, 1000); // dummy function
+      var enableBackward = false;
+      var plotTimeInSec = 10;
+      // gui vars
+      var isImg1 = false;
+      var isImg2 = false;
+      // time series vars
+      var data_dsp = [];
+      var data_d = [];
+      var data_dmeas = [];
+      var data_derr = [];
+      var data_dx1 = [];
+      var data_dx2 = [];
+      var data_fp = [];
+      var data_fi = [];
+      var data_fd = [];
+      var data_fext = [];
+      var data_fmin = [];
+      var data_fmax = [];
+      var data_ftire = [];
+      var data_fsp = [];
+      var x = [];
+      var arrayLength = Math.round(plotTimeInSec / dt_def);
+      // FUNCTIONS
+      function resetPlantVars() {
+        document.getElementById("m").value = m_def;
+        document.getElementById("cw").value = cw_def;
+        document.getElementById("dN").value = dN_def;
+        document.getElementById("A").value = A_def;
+        document.getElementById("pmax").value = pmax_def;
+        document.getElementById("alpha").value = alpha_def;
+        document.getElementById("mu").value = mu_def;
+        document.getElementById("snr").value = snr_def;
+        document.getElementById("dx10").value = dx10_def;
+        document.getElementById("d0").value = d0_def;
+      }
+      function updatePlantVars() {
+        m = parseFloat(document.getElementById("m").value);
+        cw = parseFloat(document.getElementById("cw").value);
+        dN = parseFloat(document.getElementById("dN").value);
+        A = parseFloat(document.getElementById("A").value);
+        pmax = parseFloat(document.getElementById("pmax").value);
+        alpha = parseFloat(document.getElementById("alpha").value);
+        mu = parseFloat(document.getElementById("mu").value);
+        snr = parseFloat(document.getElementById("snr").value);
+        dx10 = parseFloat(document.getElementById("dx10").value);
+        d0 = parseFloat(document.getElementById("d0").value);
+      }
+      function resetControllerVars() {
+        document.getElementById("kp").value = kp_def;
+        document.getElementById("ki").value = ki_def;
+        document.getElementById("kd").value = kd_def;
+        document.getElementById("ti").value = (kp_def / ki_def).toFixed(1);
+        document.getElementById("td").value = (kd_def / kp_def).toFixed(1);
+        document.getElementById("imax").value = imax_def;
+        document.getElementById("dt").value = dt_def;
+      }
+      function updateControllerVars() {
+        kp = parseFloat(document.getElementById("kp").value);
+        ki = parseFloat(document.getElementById("ki").value);
+        kd = parseFloat(document.getElementById("kd").value);
+        imax = parseFloat(document.getElementById("imax").value);
+        dt = parseFloat(document.getElementById("dt").value);
+        arrayLength = Math.round(plotTimeInSec / dt);
+        restartSimulation();
+      }
+      function resetLiveVars() {
+        document.getElementById("dsp").value = dsp_def;
+        document.getElementById("dsp_out").innerHTML = dsp_def;
+        document.getElementById("dx2").value = dx2_def;
+        document.getElementById("dx2_out").innerHTML = dx2_def;
+      }
+      function updateLiveVars() {
+        dsp = parseFloat(document.getElementById("dsp").value);
+        dx2 = parseFloat(document.getElementById("dx2").value);
+      }
+      function intDer(name) {
+        // get values
+        var kp_help = parseFloat(document.getElementById("kp").value);
+        var ki_help = parseFloat(document.getElementById("ki").value);
+        var kd_help = parseFloat(document.getElementById("kd").value);
+        var ti_help = parseFloat(document.getElementById("ti").value);
+        var td_help = parseFloat(document.getElementById("td").value);
+        // calculate new values
+        if(name == 'kp') {
+          if(kp_help == 0) {
+            kp_help = kp;
+          }
+          ti_help = kp_help / Math.max(Math.abs(ki_help), 0.1) * Math.sign(ki_help);
+          td_help = kd_help / Math.max(Math.abs(kp_help), 0.1) * Math.sign(kp_help);
+          document.getElementById("ti").value = ti_help.toFixed(1);
+          document.getElementById("td").value = td_help.toFixed(1);
+        } else if(name == 'ki') {
+          ti_help = kp_help / Math.max(Math.abs(ki_help), 0.1) * Math.sign(ki_help);
+          document.getElementById("ti").value = ti_help.toFixed(1);
+        } else if(name == 'kd') {
+          td_help = kd_help / Math.max(Math.abs(kp_help), 0.1) * Math.sign(kp_help);
+          document.getElementById("td").value = td_help.toFixed(1);
+        } else if(name == 'ti') {
+          if(ti_help == 0) {
+            ti_help = kp_help / Math.max(Math.abs(ki_help), 0.1) * Math.sign(ki_help);
+          }
+          ki_help = kp_help / Math.max(Math.abs(ti_help), 0.1) * Math.sign(ti_help);
+          document.getElementById("ki").value = ki_help.toFixed(1);
+        } else if(name == 'td') {
+          kd_help = kp_help * td_help;
+          document.getElementById("kd").value = kd_help.toFixed(1);
+        }
+      }      
+      function updateMonitor() {/*
+        document.getElementById("t_mon").innerHTML = t.toFixed(2);
+        document.getElementById("dx1_mon").innerHTML = dx1.toFixed(2);
+        document.getElementById("ddx1_mon").innerHTML = ddx1.toFixed(2);
+        document.getElementById("dx2_mon").innerHTML = dx2.toFixed(2);
+        document.getElementById("d_mon").innerHTML = d.toFixed(2);
+        document.getElementById("dmeas_mon").innerHTML = dmeas.toFixed(2);
+        document.getElementById("derr_mon").innerHTML = derr.toFixed(2);
+        document.getElementById("dderr_mon").innerHTML = dderr.toFixed(2);
+        document.getElementById("iint_mon").innerHTML = iint.toFixed(2);
+        document.getElementById("fmin_mon").innerHTML = (fmin/1000).toFixed(2);
+        document.getElementById("fmax_mon").innerHTML = (fmax/1000).toFixed(2);
+        document.getElementById("fsp_mon").innerHTML = (fsp/1000).toFixed(2);
+        document.getElementById("ftire_mon").innerHTML = (ftire/1000).toFixed(2);
+        document.getElementById("fslope_mon").innerHTML = (fslope/1000).toFixed(2);
+        document.getElementById("fdrag_mon").innerHTML = (fdrag/1000).toFixed(2);
+        document.getElementById("frollRes_mon").innerHTML = (frollres/1000).toFixed(2);
+        document.getElementById("fres_mon").innerHTML = (fres/1000).toFixed(2); */
+      }
+      function startPauseSimulation() {
+        if(sim_run) {  // if currently running
+          sim_run = false;
+          document.getElementById("startSimulation").innerHTML = "(Re-)Start simulation";
+        } else { // if currently paused
+          sim_run = true;
+          document.getElementById("startSimulation").innerHTML = "Pause simulation";
+        }
+        restartSimulation();
+      }
+      function resetSimulationButton() {
+        // stop simulation
+        sim_run = false;
+        document.getElementById("startSimulation").innerHTML = "(Re-)Start simulation";
+        // update and reset GUI
+        updatePlantVars();
+        updateControllerVars();
+        resetLiveVars();
+        updateLiveVars();
+        resetTimeSeries();
+        updatePlots();
+        // reset loop vars
+        t = 0;
+        dx1 = dx10;
+        ddx1 = 0;
+        derr = dsp - d0;
+        dderr = 0;
+        derrOld = 0;
+        fsp = 0;
+        fp = 0;
+        fi = 0;
+        fd = 0;
+        fmax = 0;
+        fmin = 0;
+        fdrag = 0;
+        fres = 0;
+        frollres  = 0;
+        ftire = 0;
+        d = d0;
+        dOld = d0;
+        dmeas = d0;
+        fslope = 0;
+        iint = 0;
+        updateMonitor();
+      }
+      function restartSimulation() {
+        clearInterval(intervalGraph);
+        simulation();
+      }
+      function resetTimeSeries() {
+        for(var i = 0; i < arrayLength; i++) {
+          data_dsp[i] = 0;
+          data_d[i] = 0;
+          data_dmeas[i] = 0;
+          data_derr[i] = 0;
+          data_dx1[i] = 0;
+          data_dx2[i] = 0;
+          data_fp[i] = 0;
+          data_fi[i] = 0;
+          data_fd[i] = 0;
+          data_fmin[i] = 0;
+          data_fmax[i] = 0;
+          data_ftire[i] = 0;
+          data_fsp[i] = 0;
+          data_fext[i] = 0;
+          x[i] = 0;
+        }
+      }
+      // SIMULATION
+      function simulation() {
+        intervalGraph = setInterval(function() {
+          if(sim_run) {
+            derr = dsp - dmeas;
+            iint = iint + derr * dt;
+            iint = Math.sign(iint) * Math.min(imax, Math.abs(iint));
+            dderr = (derr - derrOld) / dt;
+            fp = kp * derr * 1000;
+            fi = ki * iint * 1000;
+            fd = kd * dderr * 1000;
+            fsp = fp + fi + fd;
+            derrOld = derr;
+            fmin = -Math.cos(alpha / 180 * Math.PI) * mu * g * m;
+            fmax = Math.min(pmax*1000 / Math.max(1, dx1), Math.abs(fmin));
+            ftire = Math.min(fmax, Math.max(fsp, fmin));
+            fslope = -m * g * Math.sin(alpha / 180 * Math.PI);
+            fdrag = -Math.sign(dx1) * cw * A * 0.5 * rho * dx1 ** 2;
+            frollres = -Math.sign(dx1) * dN * g * m * Math.cos(alpha / 180 * Math.PI);
+            fres = ftire + fslope +  fdrag + frollres;
+            ddx1 = fres/m;
+            if(enableBackward) {  // vehicle can drive backwards
+              dx1 = dx1 + ddx1 * dt;
+            } else {  // vehicle cannot drive backwards
+              dx1 = Math.max(0, dx1 + ddx1 * dt);
+              if(dx1 == 0 ) {
+                ddx1 = 0;
+              }
+            }
+            d = d + (dx2 - dx1) * dt;
+            var varNoise =  (d ** 2) / (10 ** (snr*0.1))
+            var dnoise = (Math.random() - 0.5) * Math.sqrt(12 * varNoise);
+            dmeas = d + dnoise;
+            t = t + dt;
+            updateMonitor();
+            // test if crash
+            if (d <=0 && dOld > 0) {
+              alert('Uuups! A crash occured at t = ' + t.toFixed(2).toString() + 's, v_diff = ' + (dx1 - dx2).toFixed(2).toString() + 'm/s.');
+            }
+            dOld = d;
+            // add values to time series
+            // distances
+            data_dsp = data_dsp.concat(dsp);
+            data_dsp.splice(0, 1);
+            data_d = data_d.concat(d);
+            data_d.splice(0, 1);
+            data_dmeas = data_dmeas.concat(dmeas);
+            data_dmeas.splice(0, 1);
+            data_derr = data_derr.concat(derr);
+            data_derr.splice(0, 1);
+            // speeds
+            data_dx1 = data_dx1.concat(dx1);
+            data_dx1.splice(0, 1);
+            data_dx2 = data_dx2.concat(dx2);
+            data_dx2.splice(0, 1);
+            // controller command forces
+            data_fp = data_fp.concat(fp/1000);
+            data_fp.splice(0, 1);
+            data_fi = data_fi.concat(fi/1000);
+            data_fi.splice(0, 1);
+            data_fd = data_fd.concat(fd/1000);
+            data_fd.splice(0, 1);
+            // forces
+            data_fmin = data_fmin.concat(fmin/1000);
+            data_fmin.splice(0, 1);
+            data_fmax = data_fmax.concat(fmax/1000);
+            data_fmax.splice(0, 1);
+            data_fext = data_fext.concat((fslope + fdrag + frollres)/1000);
+            data_fext.splice(0, 1);
+            data_fsp = data_fsp.concat(fsp/1000);
+            data_fsp.splice(0, 1);
+            data_ftire = data_ftire.concat(ftire/1000);
+            data_ftire.splice(0, 1);
+            x = x.concat(t);
+            x.splice(0, 1);
+            // update plots
+            updatePlots();
+          }
+        }, dt*1000);
+      }
+      // GUI
+      function showImg(id) {
+        if(id == 1 && !isImg1) {
+          document.getElementById("img1Button").innerHTML = "Hide plant schematic";
+          document.getElementById("img1").style.width = "70%";
+          isImg1 = true;
+        } else if(id == 1 && isImg1) {
+          document.getElementById("img1Button").innerHTML = "Show plant schematic";
+          document.getElementById("img1").style.width = "0%";
+          isImg1 = false;
+        } else if(id == 2 && !isImg2) {
+          document.getElementById("img2Button").innerHTML = "Hide loop schematic";
+          document.getElementById("img2").style.width = "100%";
+          isImg2 = true;
+        } else if(id == 2 && isImg2) {
+          document.getElementById("img2Button").innerHTML = "Show loop schematic";
+          document.getElementById("img2").style.width = "0%";
+          isImg2 = false;
+        }
+      }
+      window.addEventListener("resize", fitMobileDevice);
+      function fitMobileDevice() {
+        let root = document.documentElement;
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        if((typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1) || (w/h < 1.5)) {
+          root.style.setProperty('--width', "92%");
+        } else {
+          root.style.setProperty('--width', "70%");
+        }
+        Plotly.purge('graphDist');
+        initialPlot();
+      }
+      // PLOTTING
+      function updatePlots() {
+        Plotly.update('graphDist', {x: [x], y: [data_dsp, data_dmeas, data_derr, data_dx1, data_dx2, data_fp, data_fi, data_fd, data_fmin, data_fmax, data_fext, data_fsp, data_ftire]});
+      }
+      function myAsciiArt() {
+        s1 = '-           __';
+        s2 = '--          ~( @\   \  Doong!!  |';
+        s3 = '---   _________]_[__/_>________  | W';
+        s4 = '     /  ____ \ <>     |  ____  \ | A';
+        s5 = '    =\_/ __ \_\_______|_/ __ \__D| L';
+        s6 = '________(__)_____________(__)____| L';
+        return s1 + '\n' + s2 + '\n' + s3 + '\n' + s4 + '\n' + s5 + '\n' + s6;
+      }
+      function initialPlot() {
+        var layout = {
+          autosize: true,
+          margin: {
+            l: 50,
+            r: 30,
+            b: 40,
+            t: 70,
+            pad: 0
+          },
+          title: 'Plots',
+          paper_bgcolor: 'rgb(255, 255, 255)',
+          plot_bgcolor: 'rgb(235, 235, 235)',
+          xaxis: {title: {text: ''}, domain: [0, 1], autorange: true},
+          yaxis: {title: {text: 'Distance in m'}, domain: [0.78, 1]},
+          xaxis2: {title: {text: ''}, domain: [0, 1], anchor: 'y2', autorange: true},
+          yaxis2: {title: {text: 'Speed in m/s'}, domain: [0.53, 0.75], anchor: 'x2', range: [-5, 80]},
+          xaxis3: {title: {text: ''}, domain: [0, 1], anchor: 'y3', autorange: true},
+          yaxis3: {title: {text: 'Ctr. output'}, domain: [0.28, 0.50], anchor: 'x3'},
+          xaxis4: {title: {text: 'Time in s'}, domain: [0, 1], anchor: 'y4', autorange: true},
+          yaxis4: {title: {text: 'Force in kN'}, domain: [0.0, 0.25], anchor: 'x4'}
+        };
+        Plotly.plot('graphDist', 
+          [
+            { // Distance plot
+              y: data_dsp,
+              x: x,
+              mode: 'lines',
+              name: 'Δx_{sp}',
+              line: {
+                dash: 'dot',
+                width: 4,
+                color: 'rgb(2, 181, 160)'
+                }
+            }, {
+              y: data_dmeas,
+              x: x,
+              mode: 'lines',
+              line: {color: 'rgb(255, 211, 92)'},
+              name: 'Δx_{meas}'
+            }, {
+              y: data_derr,
+              x: x,
+              mode: 'lines',
+              line: {color: 'rgb(234, 62, 112)'},
+              name: 'Δx_{err}'
+            }, { // Speed plot
+              y: data_dx1,
+              x: x,
+              xaxis: 'x2',
+              yaxis: 'y2',
+              mode: 'lines',
+              line: {color: 'rgb(1, 128, 181)', width: 3},
+              name: 'dx_{1}'
+            }, {
+              y: data_dx2,
+              x: x,
+              xaxis: 'x2',
+              yaxis: 'y2',
+              mode: 'lines',
+              line: {color: 'rgb(255, 130, 1)', width: 2},
+              name: 'dx_{2}'
+            }, { // controller plot
+              y: data_fp,
+              x: x,
+              xaxis: 'x3',
+              yaxis: 'y3',
+              mode: 'lines',
+              line: {color: 'rgb(19, 27, 29)', width: 3},
+              name: 'Prop. part'
+            }, {
+              y: data_fi,
+              x: x,
+              xaxis: 'x3',
+              yaxis: 'y3',
+              mode: 'lines',
+              line: {color: 'rgb(118, 122, 121)', width: 3},
+              name: 'Integral part'
+            }, {
+              y: data_fd,
+              x: x,
+              xaxis: 'x3',
+              yaxis: 'y3',
+              mode: 'lines',
+              line: {color: 'rgb(104, 73, 71)', width: 3},
+              name: 'Derivative part'
+            }, { // Forces plot
+              y: data_fmin,
+              x: x,
+              xaxis: 'x4',
+              yaxis: 'y4',
+              mode: 'lines',
+              line: {color: 'rgb(78, 19, 57)', width: 4, dash: 'dot'},
+              name: 'f_{tire,min}'
+            }, {
+              y: data_fmax,
+              x: x,
+              xaxis: 'x4',
+              yaxis: 'y4',
+              mode: 'lines',
+              line: {color: 'rgb(241, 114, 34)', width: 4, dash: 'dot'},
+              name: 'f_{tire,max}'
+            }, {
+              y: data_fext,
+              x: x,
+              xaxis: 'x4',
+              yaxis: 'y4',
+              mode: 'lines',
+              line: {color: 'rgb(233, 183, 67)', width: 2},
+              name: 'f_{ext}'
+            }, {
+              y: data_fsp,
+              x: x,
+              xaxis: 'x4',
+              yaxis: 'y4',
+              mode: 'lines',
+              line: {color: 'rgb(96, 159, 148)', width: 3},
+              name: 'f_{ctr,demanded}'
+            }, {
+              y: data_ftire,
+              x: x,
+              xaxis: 'x4',
+              yaxis: 'y4',
+              mode: 'lines',
+              line: {color: 'rgb(109, 108, 46)', width: 3},
+              name: 'f_{tire}'
+            }
+          ], layout
+        );
+      }
+      // initial function calls
+      resetTimeSeries();
+      resetPlantVars();
+      resetControllerVars();
+      resetLiveVars();
+      fitMobileDevice();
+      resetSimulationButton();
+    </script>
+  </body>
+</html>
